@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Calendar, Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 interface NavigationProps {
   scrollToSection: (id: string) => void
@@ -11,6 +13,7 @@ interface NavigationProps {
 export function Navigation({ scrollToSection }: NavigationProps) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +33,9 @@ export function Navigation({ scrollToSection }: NavigationProps) {
     setMobileMenuOpen(false)
   }
 
+  // Определяем, на главной ли мы странице
+  const isHomePage = pathname === '/'
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -38,8 +44,8 @@ export function Navigation({ scrollToSection }: NavigationProps) {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <button
-            onClick={scrollToTop}
+          <Link
+            href="/"
             className="flex items-center gap-2 cursor-pointer"
             aria-label="BIGMEET - на главную"
           >
@@ -47,34 +53,59 @@ export function Navigation({ scrollToSection }: NavigationProps) {
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold gradient-text">BIGMEET</span>
-          </button>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <button
-              onClick={() => handleNavClick('features')}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+            {/* На главной показываем кнопки для скролла */}
+            {isHomePage ? (
+              <>
+                <button
+                  onClick={() => handleNavClick('features')}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Возможности
+                </button>
+                <button
+                  onClick={() => handleNavClick('for-whom')}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Для кого
+                </button>
+                <button
+                  onClick={() => handleNavClick('how-it-works')}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Как работает
+                </button>
+                <button
+                  onClick={() => handleNavClick('pricing')}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Тарифы
+                </button>
+              </>
+            ) : (
+              /* На других страницах показываем ссылку на главную */
+              <Link
+                href="/"
+                className="text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Главная
+              </Link>
+            )}
+            
+            {/* Ссылка на календарь всегда отображается */}
+            <Link
+              href="/calendar"
+              className={`text-sm transition-colors ${
+                pathname === '/calendar' 
+                  ? 'text-white font-semibold' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
-              Возможности
-            </button>
-            <button
-              onClick={() => handleNavClick('for-whom')}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
-            >
-              Для кого
-            </button>
-            <button
-              onClick={() => handleNavClick('how-it-works')}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
-            >
-              Как работает
-            </button>
-            <button
-              onClick={() => handleNavClick('pricing')}
-              className="text-sm text-gray-400 hover:text-white transition-colors"
-            >
-              Тарифы
-            </button>
+              Календарь
+            </Link>
           </div>
 
           <div className="hidden md:block">
@@ -104,34 +135,62 @@ export function Navigation({ scrollToSection }: NavigationProps) {
       {mobileMenuOpen && (
         <div className="md:hidden glass-strong mt-3 mx-4 rounded-2xl p-4 animate-scale-in">
           <div className="flex flex-col gap-4">
-            <button
-              onClick={() => handleNavClick('features')}
-              className="text-left text-gray-300 hover:text-white py-2"
+            {/* Мобильная навигация */}
+            <Link
+              href="/"
+              className={`text-left py-2 ${
+                pathname === '/' ? 'text-white font-semibold' : 'text-gray-300'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
             >
-              Возможности
-            </button>
-            <button
-              onClick={() => handleNavClick('for-whom')}
-              className="text-left text-gray-300 hover:text-white py-2"
+              Главная
+            </Link>
+            
+            <Link
+              href="/calendar"
+              className={`text-left py-2 ${
+                pathname === '/calendar' ? 'text-white font-semibold' : 'text-gray-300'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
             >
-              Для кого
-            </button>
-            <button
-              onClick={() => handleNavClick('how-it-works')}
-              className="text-left text-gray-300 hover:text-white py-2"
-            >
-              Как работает
-            </button>
-            <button
-              onClick={() => handleNavClick('pricing')}
-              className="text-left text-gray-300 hover:text-white py-2"
-            >
-              Тарифы
-            </button>
+              Календарь
+            </Link>
+            
+            {/* На главной показываем дополнительные пункты меню */}
+            {isHomePage && (
+              <>
+                <button
+                  onClick={() => handleNavClick('features')}
+                  className="text-left text-gray-300 hover:text-white py-2"
+                >
+                  Возможности
+                </button>
+                <button
+                  onClick={() => handleNavClick('for-whom')}
+                  className="text-left text-gray-300 hover:text-white py-2"
+                >
+                  Для кого
+                </button>
+                <button
+                  onClick={() => handleNavClick('how-it-works')}
+                  className="text-left text-gray-300 hover:text-white py-2"
+                >
+                  Как работает
+                </button>
+                <button
+                  onClick={() => handleNavClick('pricing')}
+                  className="text-left text-gray-300 hover:text-white py-2"
+                >
+                  Тарифы
+                </button>
+              </>
+            )}
+            
             <a
               href="https://app.leadteh.ru/w/dok15?referer=@BazhenovYuri&from=bmvercel1"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
             >
               <Button className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white w-full mt-2">
                 Перейти в бота
