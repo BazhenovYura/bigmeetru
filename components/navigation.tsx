@@ -95,7 +95,7 @@ export function Navigation({ scrollToSection }: NavigationProps) {
               </Link>
             )}
             
-            {/* Ссылка на календарь всегда отображается */}
+            {/* Ссылка на календарь - исправлено на /calendar */}
             <Link
               href="/calendar"
               className={`text-sm transition-colors ${
@@ -146,6 +146,7 @@ export function Navigation({ scrollToSection }: NavigationProps) {
               Главная
             </Link>
             
+            {/* Исправлено на /calendar */}
             <Link
               href="/calendar"
               className={`text-left py-2 ${
