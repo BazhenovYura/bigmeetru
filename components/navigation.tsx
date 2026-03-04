@@ -44,16 +44,31 @@ export function Navigation({ scrollToSection }: NavigationProps) {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center gap-2 cursor-pointer"
-            aria-label="BIGMEET - на главную"
-          >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold gradient-text">BIGMEET</span>
-          </Link>
+          {/* Исправлено: теперь это button с функцией scrollToTop на главной, 
+              и Link на других страницах */}
+          {isHomePage ? (
+            <button
+              onClick={scrollToTop}
+              className="flex items-center gap-2 cursor-pointer"
+              aria-label="BIGMEET - на главную"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold gradient-text">BIGMEET</span>
+            </button>
+          ) : (
+            <Link
+              href="/"
+              className="flex items-center gap-2 cursor-pointer"
+              aria-label="BIGMEET - на главную"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold gradient-text">BIGMEET</span>
+            </Link>
+          )}
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
@@ -95,7 +110,7 @@ export function Navigation({ scrollToSection }: NavigationProps) {
               </Link>
             )}
             
-            {/* Ссылка на календарь - исправлено на /calendar */}
+            {/* Ссылка на календарь всегда отображается */}
             <Link
               href="/calendar"
               className={`text-sm transition-colors ${
@@ -136,17 +151,23 @@ export function Navigation({ scrollToSection }: NavigationProps) {
         <div className="md:hidden glass-strong mt-3 mx-4 rounded-2xl p-4 animate-scale-in">
           <div className="flex flex-col gap-4">
             {/* Мобильная навигация */}
-            <Link
-              href="/"
-              className={`text-left py-2 ${
-                pathname === '/' ? 'text-white font-semibold' : 'text-gray-300'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Главная
-            </Link>
+            {isHomePage ? (
+              <button
+                onClick={scrollToTop}
+                className="text-left py-2 text-gray-300 hover:text-white"
+              >
+                Наверх
+              </button>
+            ) : (
+              <Link
+                href="/"
+                className="text-left py-2 text-gray-300 hover:text-white"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Главная
+              </Link>
+            )}
             
-            {/* Исправлено на /calendar */}
             <Link
               href="/calendar"
               className={`text-left py-2 ${
