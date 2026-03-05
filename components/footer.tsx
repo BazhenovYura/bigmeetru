@@ -1,4 +1,5 @@
 import { Calendar, MessageCircle, Share2 } from 'lucide-react'
+import Link from 'next/link'
 
 interface FooterProps {
   scrollToSection: (id: string) => void
@@ -78,6 +79,15 @@ export function Footer({ scrollToSection }: FooterProps) {
                 >
                   Тарифы
                 </button>
+              </li>
+              {/* Добавлена ссылка на календарь */}
+              <li>
+                <Link
+                  href="/calendar"
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Календарь событий
+                </Link>
               </li>
             </ul>
           </div>
