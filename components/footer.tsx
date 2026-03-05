@@ -107,7 +107,7 @@ export function Footer({ scrollToSection }: FooterProps) {
               </li>
               <li>
                 <a
-                  href="https://bigmeet.ru/novyj-funkcional"
+                  href="https://t.me/BIGMEETru"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-400 hover:text-white transition-colors"
