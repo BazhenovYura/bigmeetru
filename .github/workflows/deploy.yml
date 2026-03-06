@@ -12,13 +12,17 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
+        # УБИРАЕМ cache: 'npm' ← ВОТ ОНО!
         
     - name: Install & Build
       run: |
-        npm install --legacy-peer-deps --force
+        npm config delete cache
+        npm install --no-save --legacy-peer-deps --force
         npm run build
         
+    - name: Show files
+      run: ls -la
+      
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -28,7 +32,6 @@ jobs:
         
     - name: Deploy to VK Cloud
       run: |
-        ls -la # Покажет папки
         aws s3 sync ./dist/ s3://${{ secrets.VK_BUCKET }}/ \
           --endpoint-url https://hb.ru-central1.vkcs.cloud \
           --delete
