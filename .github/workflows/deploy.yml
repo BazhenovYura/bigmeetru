@@ -11,7 +11,7 @@ jobs:
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
-        node-version: '20'  # ✅ Next.js happy
+        node-version: '20'
         
     - name: Install & Build
       run: |
@@ -20,16 +20,14 @@ jobs:
         
     - name: Show files
       run: ls -la
-      
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.VK_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.VK_SECRET_KEY }}
-        aws-region: ru-central1
         
     - name: Deploy to VK Cloud
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
       run: |
-        aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
-          --endpoint-url https://hb.ru-central1.vkcs.cloud \
-          --delete
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        aws configure set default.region us-east-1
+        aws configure set s3.endpoint_url https://hb.ru-central1.vkcs.cloud
+        aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ --delete
