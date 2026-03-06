@@ -16,7 +16,7 @@ jobs:
         
     - name: Install & Build
       run: |
-        npm ci --legacy-peer-deps --force || (rm -f package-lock.json && npm install --legacy-peer-deps)
+        npm install --legacy-peer-deps --force
         npm run build
         
     - name: Configure AWS Credentials
@@ -28,6 +28,7 @@ jobs:
         
     - name: Deploy to VK Cloud
       run: |
+        ls -la # Покажет папки
         aws s3 sync ./dist/ s3://${{ secrets.VK_BUCKET }}/ \
           --endpoint-url https://hb.ru-central1.vkcs.cloud \
           --delete
