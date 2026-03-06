@@ -12,13 +12,13 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+        cache: 'npm'
         
     - name: Install & Build
       run: |
-        npm ci
+        npm ci --legacy-peer-deps --force || (rm -f package-lock.json && npm install --legacy-peer-deps)
         npm run build
-    
-    # ✅ РАБОЧИЙ action для S3
+        
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
