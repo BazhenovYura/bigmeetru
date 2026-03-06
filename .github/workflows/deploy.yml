@@ -17,13 +17,17 @@ jobs:
       run: |
         npm ci
         npm run build
-      
-    - name: Deploy to VK Cloud
-      uses: tinacious/aws-s3-sync@v1
+    
+    # ✅ РАБОЧИЙ action для S3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        source: ./dist
-        bucket: ${{ secrets.VK_BUCKET }}
-        aws_access_key_id: ${{ secrets.VK_ACCESS_KEY }}
-        aws_secret_access_key: ${{ secrets.VK_SECRET_KEY }}
-        endpoint: https://hb.ru-central1.vkcs.cloud
-        delete: true
+        aws-access-key-id: ${{ secrets.VK_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.VK_SECRET_KEY }}
+        aws-region: ru-central1
+        
+    - name: Deploy to VK Cloud
+      run: |
+        aws s3 sync ./dist/ s3://${{ secrets.VK_BUCKET }}/ \
+          --endpoint-url https://hb.ru-central1.vkcs.cloud \
+          --delete
