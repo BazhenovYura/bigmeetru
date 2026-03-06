@@ -11,13 +11,11 @@ jobs:
     - name: Setup Node
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        # УБИРАЕМ cache: 'npm' ← ВОТ ОНО!
+        node-version: '20'  # ✅ Next.js happy
         
     - name: Install & Build
       run: |
-        npm config delete cache
-        npm install --no-save --legacy-peer-deps --force
+        npm install --legacy-peer-deps
         npm run build
         
     - name: Show files
@@ -32,6 +30,6 @@ jobs:
         
     - name: Deploy to VK Cloud
       run: |
-        aws s3 sync ./dist/ s3://${{ secrets.VK_BUCKET }}/ \
+        aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
           --endpoint-url https://hb.ru-central1.vkcs.cloud \
           --delete
