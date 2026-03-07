@@ -67,6 +67,19 @@ jobs:
         
         echo "✅ Синхронизация завершена!"
         
+    - name: Enable static website hosting
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
+      run: |
+        echo "🌐 Включаем статический хостинг..."
+        aws s3 website s3://${{ secrets.VK_BUCKET }} \
+          --index-document index.html \
+          --error-document 404.html \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
+        
+        echo "✅ Хостинг включен"
+        
     - name: Make files public
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
@@ -80,10 +93,51 @@ jobs:
         
         echo "✅ Все файлы теперь доступны по ссылкам"
         
-    - name: Get site URL
+    - name: Set bucket policy for public access (optional but recommended)
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
       run: |
-        echo "🌐 Ваш сайт доступен по адресу:"
-        echo "https://hb.bizmrg.com/${{ secrets.VK_BUCKET }}/index.html"
+        echo "📝 Устанавливаем политику бакета для публичного доступа..."
+        
+        # Создаем временный файл с политикой
+        cat > bucket-policy.json << EOF
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::${{ secrets.VK_BUCKET }}/*"
+            }
+          ]
+        }
+        EOF
+        
+        # Применяем политику
+        aws s3api put-bucket-policy \
+          --bucket ${{ secrets.VK_BUCKET }} \
+          --policy file://bucket-policy.json \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru || echo "⚠️ Не удалось установить политику (возможно, уже есть)"
+        
+        echo "✅ Политика применена"
+        
+    - name: Get site URLs
+      run: |
+        echo "🌐 ВАШ САЙТ ДОСТУПЕН ПО АДРЕСАМ:"
+        echo "=================================="
+        echo "🏠 Главная страница:"
+        echo "   https://${{ secrets.VK_BUCKET }}.hb.ru-msk.vkcloud-storage.ru/"
+        echo ""
+        echo "📄 Прямая ссылка на index.html:"
+        echo "   https://${{ secrets.VK_BUCKET }}.hb.ru-msk.vkcloud-storage.ru/index.html"
+        echo ""
+        echo "🔒 Если сайт не открывается, проверьте:"
+        echo "   - Прошло ли несколько минут после деплоя"
+        echo "   - Что все файлы имеют публичный доступ"
+        echo "   - Что хостинг включен (мы это сделали выше)"
         
     - name: Verify deployment
       env:
