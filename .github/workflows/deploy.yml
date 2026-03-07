@@ -1,4 +1,4 @@
-name: Deploy to VK Cloud
+name: Deploy to VK Cloud 
 on:
   push:
     branches: [ main ]
