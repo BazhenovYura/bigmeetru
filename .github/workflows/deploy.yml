@@ -28,6 +28,7 @@ jobs:
       run: |
         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        aws configure set default.region us-east-1
-        aws configure set s3.endpoint_url https://hb.ru-central1.vkcs.cloud
-        aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ --delete
+        aws configure set default.region ru-msk
+        aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
+          --delete
