@@ -42,17 +42,23 @@ jobs:
         echo "📝 Проверяем существование бакета ${{ secrets.VK_BUCKET }}..."
         if aws s3 ls "s3://${{ secrets.VK_BUCKET }}" --endpoint-url https://hb.ru-msk.vkcloud-storage.ru 2>&1 | grep -q 'NoSuchBucket'; then
           echo "❌ Бакет ${{ secrets.VK_BUCKET }} не существует!"
-          echo "Создайте бакет в панели VK Cloud и повторите деплой"
-          exit 1
+          echo "Пытаемся создать бакет..."
+          aws s3 mb s3://${{ secrets.VK_BUCKET }} --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
         fi
         
         echo "📝 Выдаем права FULL_CONTROL на бакет ${{ secrets.VK_BUCKET }}..."
         aws s3api put-bucket-acl \
           --bucket ${{ secrets.VK_BUCKET }} \
           --grant-full-control id=$CANONICAL_ID \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru || echo "⚠️  Права уже были выданы или произошла ошибка. Продолжаем..."
+          --grant-read id=$CANONICAL_ID \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
         
-        echo "✅ Права проверены/выданы"
+        echo "📝 Проверяем ACL бакета:"
+        aws s3api get-bucket-acl \
+          --bucket ${{ secrets.VK_BUCKET }} \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
+        
+        echo "✅ Права настроены"
         
     - name: Deploy to VK Cloud Storage
       env:
@@ -64,9 +70,7 @@ jobs:
         # Синхронизируем файлы
         aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
           --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
-          --delete \
-          --exclude ".git/*" \
-          --exclude ".github/*"
+          --delete
         
         echo "✅ Синхронизация завершена!"
         
@@ -80,4 +84,4 @@ jobs:
           --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
           --recursive \
           --human-readable \
-          --summarize || echo "⚠️ Не удалось получить список файлов"
+          --summarize
