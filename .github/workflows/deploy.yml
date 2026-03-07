@@ -67,19 +67,6 @@ jobs:
         
         echo "✅ Синхронизация завершена!"
         
-    - name: Enable static website hosting
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "🌐 Включаем статический хостинг..."
-        aws s3 website s3://${{ secrets.VK_BUCKET }} \
-          --index-document index.html \
-          --error-document 404.html \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
-        
-        echo "✅ Хостинг включен"
-        
     - name: Make files public
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
@@ -93,7 +80,7 @@ jobs:
         
         echo "✅ Все файлы теперь доступны по ссылкам"
         
-    - name: Set bucket policy for public access (optional but recommended)
+    - name: Set bucket policy for public access
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
@@ -128,25 +115,17 @@ jobs:
       run: |
         echo "🌐 ВАШ САЙТ ДОСТУПЕН ПО АДРЕСАМ:"
         echo "=================================="
-        echo "🏠 Главная страница:"
-        echo "   https://${{ secrets.VK_BUCKET }}.hb.ru-msk.vkcloud-storage.ru/"
-        echo ""
         echo "📄 Прямая ссылка на index.html:"
         echo "   https://${{ secrets.VK_BUCKET }}.hb.ru-msk.vkcloud-storage.ru/index.html"
         echo ""
-        echo "🔒 Если сайт не открывается, проверьте:"
-        echo "   - Прошло ли несколько минут после деплоя"
-        echo "   - Что все файлы имеют публичный доступ"
-        echo "   - Что хостинг включен (мы это сделали выше)"
-        
-    - name: Verify deployment
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "🔍 Проверка загруженных файлов:"
-        aws s3 ls s3://${{ secrets.VK_BUCKET }}/ \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
-          --recursive \
-          --human-readable \
-          --summarize
+        echo "🏠 Для доступа к сайту без /index.html в конце:"
+        echo "   нужно привязать домен через личный кабинет VK Cloud"
+        echo ""
+        echo "🔧 Как привязать домен вручную:"
+        echo "   1. Зайдите в панель VK Cloud → Объектное хранилище → Бакеты"
+        echo "   2. Нажмите на бакет ${{ secrets.VK_BUCKET }}"
+        echo "   3. Перейдите на вкладку 'Домен'"
+        echo "   4. Нажмите 'Привязать домен' и следуйте инструкциям [citation:7]"
+        echo ""
+        echo "🌍 После привязки домена сайт будет доступен по адресу:"
+        echo "   http://<ваш_домен>/"
