@@ -8,80 +8,44 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Diagnose account
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
+      run: |
+        echo "🔍 ДИАГНОСТИКА"
+        echo "=============="
+        echo "1. Получаем Canonical ID текущего аккаунта:"
+        CANONICAL_ID=$(aws s3api list-buckets \
+          --query "Owner.ID" \
+          --output text \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru)
+        echo "✅ Canonical ID: $CANONICAL_ID"
+        
+        echo "2. Проверяем список бакетов:"
+        aws s3 ls --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
+        
+        echo "3. Проверяем доступ к бакету ${{ secrets.VK_BUCKET }}:"
+        aws s3 ls s3://${{ secrets.VK_BUCKET }}/ \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru || echo "❌ Нет доступа к бакету"
+    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         
     - name: Install dependencies
-      run: |
-        npm install --legacy-peer-deps
+      run: npm install --legacy-peer-deps
         
     - name: Build project
-      run: |
-        npm run build
-        
-    - name: Show build output
-      run: |
-        echo "📁 Содержимое папки out/:"
-        ls -la out/
-        
-    - name: Grant bucket permissions
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "🔑 Получаем Canonical ID текущего пользователя..."
-        CANONICAL_ID=$(aws s3api list-buckets \
-          --query "Owner.ID" \
-          --output text \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru)
-        
-        echo "✅ Canonical ID пользователя: $CANONICAL_ID"
-        
-        echo "📝 Проверяем существование бакета ${{ secrets.VK_BUCKET }}..."
-        if aws s3 ls "s3://${{ secrets.VK_BUCKET }}" --endpoint-url https://hb.ru-msk.vkcloud-storage.ru 2>&1 | grep -q 'NoSuchBucket'; then
-          echo "❌ Бакет ${{ secrets.VK_BUCKET }} не существует!"
-          echo "Пытаемся создать бакет..."
-          aws s3 mb s3://${{ secrets.VK_BUCKET }} --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
-        fi
-        
-        echo "📝 Выдаем права FULL_CONTROL на бакет ${{ secrets.VK_BUCKET }}..."
-        aws s3api put-bucket-acl \
-          --bucket ${{ secrets.VK_BUCKET }} \
-          --grant-full-control id=$CANONICAL_ID \
-          --grant-read id=$CANONICAL_ID \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
-        
-        echo "📝 Проверяем ACL бакета:"
-        aws s3api get-bucket-acl \
-          --bucket ${{ secrets.VK_BUCKET }} \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
-        
-        echo "✅ Права настроены"
+      run: npm run build
         
     - name: Deploy to VK Cloud Storage
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
       run: |
-        echo "🚀 Начинаем синхронизацию с бакетом: ${{ secrets.VK_BUCKET }}"
-        
-        # Синхронизируем файлы
+        echo "🚀 Синхронизация с бакетом: ${{ secrets.VK_BUCKET }}"
         aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
           --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
           --delete
-        
-        echo "✅ Синхронизация завершена!"
-        
-    - name: Verify deployment
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "🔍 Проверка загруженных файлов:"
-        aws s3 ls s3://${{ secrets.VK_BUCKET }}/ \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
-          --recursive \
-          --human-readable \
-          --summarize
