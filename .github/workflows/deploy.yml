@@ -1,4 +1,4 @@
-name: Deploy VK Cloud
+name: Deploy to VK Cloud
 on:
   push:
     branches: [ main ]
@@ -8,20 +8,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup Node
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         
-    - name: Install & Build
+    - name: Install dependencies
       run: |
         npm install --legacy-peer-deps
+        
+    - name: Build project
+      run: |
         npm run build
         
-    - name: Show files
-      run: ls -la
+    - name: Install AWS CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y awscli
         
-    - name: Deploy to VK Cloud
+    - name: Configure AWS CLI for VK Cloud
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
@@ -29,6 +34,41 @@ jobs:
         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
         aws configure set default.region ru-msk
+        aws configure set default.output json
+        
+    - name: Deploy to VK Cloud Storage
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
+      run: |
+        echo "🚀 Начинаем деплой в бакет: ${{ secrets.VK_BUCKET }}"
+        
+        # Проверяем существование бакета
+        if aws s3 ls "s3://${{ secrets.VK_BUCKET }}" --endpoint-url https://hb.ru-msk.vkcloud-storage.ru 2>&1 | grep -q 'NoSuchBucket'
+        then
+          echo "❌ Бакет ${{ secrets.VK_BUCKET }} не существует!"
+          echo "Создайте бакет в панели VK Cloud и повторите деплой"
+          exit 1
+        fi
+        
+        # Синхронизируем файлы
+        echo "📦 Синхронизируем файлы из папки ./out/"
         aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
           --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
-          --delete
+          --delete \
+          --exclude ".git/*" \
+          --exclude ".github/*"
+        
+        echo "✅ Деплой завершен успешно!"
+        
+    - name: Verify deployment
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
+      run: |
+        echo "🔍 Проверка загруженных файлов:"
+        aws s3 ls s3://${{ secrets.VK_BUCKET }}/ \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
+          --recursive \
+          --human-readable \
+          --summarize
