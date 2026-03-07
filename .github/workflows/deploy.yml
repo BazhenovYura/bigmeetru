@@ -21,27 +21,63 @@ jobs:
       run: |
         npm run build
         
-    - name: Show files
-      run: ls -la out/
+    - name: Show build output
+      run: |
+        echo "📁 Содержимое папки out/:"
+        ls -la out/
         
-    - name: Deploy to VK Cloud Storage
+    - name: Grant bucket permissions
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
       run: |
-        echo "🚀 Начинаем деплой в бакет: ${{ secrets.VK_BUCKET }}"
+        echo "🔑 Получаем Canonical ID текущего пользователя..."
+        CANONICAL_ID=$(aws s3api list-buckets \
+          --query "Owner.ID" \
+          --output text \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru)
         
-        # Проверяем существование бакета
+        echo "✅ Canonical ID пользователя: $CANONICAL_ID"
+        
+        echo "📝 Проверяем существование бакета ${{ secrets.VK_BUCKET }}..."
         if aws s3 ls "s3://${{ secrets.VK_BUCKET }}" --endpoint-url https://hb.ru-msk.vkcloud-storage.ru 2>&1 | grep -q 'NoSuchBucket'; then
           echo "❌ Бакет ${{ secrets.VK_BUCKET }} не существует!"
           echo "Создайте бакет в панели VK Cloud и повторите деплой"
           exit 1
         fi
         
+        echo "📝 Выдаем права FULL_CONTROL на бакет ${{ secrets.VK_BUCKET }}..."
+        aws s3api put-bucket-acl \
+          --bucket ${{ secrets.VK_BUCKET }} \
+          --grant-full-control id=$CANONICAL_ID \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru || echo "⚠️  Права уже были выданы или произошла ошибка. Продолжаем..."
+        
+        echo "✅ Права проверены/выданы"
+        
+    - name: Deploy to VK Cloud Storage
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
+      run: |
+        echo "🚀 Начинаем синхронизацию с бакетом: ${{ secrets.VK_BUCKET }}"
+        
         # Синхронизируем файлы
-        echo "📦 Синхронизируем файлы из папки ./out/"
         aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
           --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
-          --delete
+          --delete \
+          --exclude ".git/*" \
+          --exclude ".github/*"
         
-        echo "✅ Деплой завершен успешно!"
+        echo "✅ Синхронизация завершена!"
+        
+    - name: Verify deployment
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
+      run: |
+        echo "🔍 Проверка загруженных файлов:"
+        aws s3 ls s3://${{ secrets.VK_BUCKET }}/ \
+          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
+          --recursive \
+          --human-readable \
+          --summarize || echo "⚠️ Не удалось получить список файлов"
