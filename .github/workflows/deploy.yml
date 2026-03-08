@@ -1,131 +1,31 @@
-name: Deploy to VK Cloud
+name: Deploy to Yandex Cloud
+
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+          
+      - name: Build project
+        run: npm run build
         
-    - name: Install dependencies
-      run: |
-        npm install --legacy-peer-deps
-        
-    - name: Build project
-      run: |
-        npm run build
-        
-    - name: Show build output
-      run: |
-        echo "📁 Содержимое папки out/:"
-        ls -la out/
-        
-    - name: Check bucket and grant permissions
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "🔑 Получаем информацию об аккаунте..."
-        CANONICAL_ID=$(aws s3api list-buckets \
-          --query "Owner.ID" \
-          --output text \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru)
-        echo "✅ Canonical ID: $CANONICAL_ID"
-        
-        echo "📝 Проверяем существование бакета ${{ secrets.VK_BUCKET }}..."
-        if aws s3 ls "s3://${{ secrets.VK_BUCKET }}" --endpoint-url https://hb.ru-msk.vkcloud-storage.ru 2>&1 | grep -q 'NoSuchBucket'; then
-          echo "❌ Бакет не существует! Создаю..."
-          aws s3 mb s3://${{ secrets.VK_BUCKET }} --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
-        else
-          echo "✅ Бакет существует"
-        fi
-        
-        echo "📝 Выдаем права на бакет..."
-        aws s3api put-bucket-acl \
-          --bucket ${{ secrets.VK_BUCKET }} \
-          --grant-full-control id=$CANONICAL_ID \
-          --grant-read id=$CANONICAL_ID \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru || echo "⚠️ Права уже настроены"
-        
-    - name: Deploy to VK Cloud Storage
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "🚀 Синхронизируем файлы с бакетом ${{ secrets.VK_BUCKET }}..."
-        aws s3 sync ./out/ s3://${{ secrets.VK_BUCKET }}/ \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru \
-          --delete \
-          --exclude ".git/*" \
-          --exclude ".github/*"
-        
-        echo "✅ Синхронизация завершена!"
-        
-    - name: Make files public
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "🔓 Делаем все файлы публичными..."
-        aws s3 cp s3://${{ secrets.VK_BUCKET }}/ s3://${{ secrets.VK_BUCKET }}/ \
-          --recursive \
-          --acl public-read \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru
-        
-        echo "✅ Все файлы теперь доступны по ссылкам"
-        
-    - name: Set bucket policy for public access
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.VK_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.VK_SECRET_KEY }}
-      run: |
-        echo "📝 Устанавливаем политику бакета для публичного доступа..."
-        
-        # Создаем временный файл с политикой
-        cat > bucket-policy.json << EOF
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Sid": "PublicReadGetObject",
-              "Effect": "Allow",
-              "Principal": "*",
-              "Action": "s3:GetObject",
-              "Resource": "arn:aws:s3:::${{ secrets.VK_BUCKET }}/*"
-            }
-          ]
-        }
-        EOF
-        
-        # Применяем политику
-        aws s3api put-bucket-policy \
-          --bucket ${{ secrets.VK_BUCKET }} \
-          --policy file://bucket-policy.json \
-          --endpoint-url https://hb.ru-msk.vkcloud-storage.ru || echo "⚠️ Не удалось установить политику (возможно, уже есть)"
-        
-        echo "✅ Политика применена"
-        
-    - name: Get site URLs
-      run: |
-        echo "🌐 ВАШ САЙТ ДОСТУПЕН ПО АДРЕСАМ:"
-        echo "=================================="
-        echo "📄 Прямая ссылка на index.html:"
-        echo "   https://${{ secrets.VK_BUCKET }}.hb.ru-msk.vkcloud-storage.ru/index.html"
-        echo ""
-        echo "🏠 Для доступа к сайту без /index.html в конце:"
-        echo "   нужно привязать домен через личный кабинет VK Cloud"
-        echo ""
-        echo "🔧 Как привязать домен вручную:"
-        echo "   1. Зайдите в панель VK Cloud → Объектное хранилище → Бакеты"
-        echo "   2. Нажмите на бакет ${{ secrets.VK_BUCKET }}"
-        echo "   3. Перейдите на вкладку 'Домен'"
-        echo "   4. Нажмите 'Привязать домен' и следуйте инструкциям [citation:7]"
-        echo ""
-        echo "🌍 После привязки домена сайт будет доступен по адресу:"
-        echo "   http://<ваш_домен>/"
+      - name: Deploy to Yandex Object Storage
+        uses: nekitcorp/yandex-storage-website-action@v2
+        with:
+          access-key-id: ${{ secrets.YC_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.YC_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.YC_BUCKET }}
+          working-directory: out
+          clear: true
