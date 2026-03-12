@@ -1,16 +1,33 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-export function YandexMetrika() {
+// Компонент, который использует useSearchParams
+function MetrikaTracker() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   useEffect(() => {
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.ym) {
+      const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
+      
+      setTimeout(() => {
+        // @ts-ignore
+        window.ym(106793429, 'hit', url)
+      }, 300)
+    }
+  }, [pathname, searchParams])
+
+  return null
+}
+
+// Основной компонент
+export function YandexMetrika() {
+  useEffect(() => {
     // Функция инициализации метрики
     const initMetrika = () => {
-      // Проверяем, не загружена ли уже метрика
       // @ts-ignore
       if (window.ym) return
 
@@ -23,13 +40,11 @@ export function YandexMetrika() {
       // @ts-ignore
       window.ym.l = 1 * new Date()
       
-      // Создаем и добавляем скрипт
       const script = document.createElement('script')
       script.type = 'text/javascript'
       script.async = true
       script.src = 'https://mc.yandex.ru/metrika/tag.js'
       
-      // Добавляем обработчик загрузки
       script.onload = () => {
         // @ts-ignore
         window.ym(106793429, 'init', {
@@ -42,7 +57,6 @@ export function YandexMetrika() {
           defer: false
         })
 
-        // Отправляем первый хит
         const url = window.location.pathname + window.location.search
         // @ts-ignore
         window.ym(106793429, 'hit', url)
@@ -54,23 +68,13 @@ export function YandexMetrika() {
     initMetrika()
   }, [])
 
-  // Отслеживаем переходы между страницами (для SPA)
-  useEffect(() => {
-    // @ts-ignore
-    if (typeof window !== 'undefined' && window.ym) {
-      const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
-      
-      // Отправляем хит с небольшой задержкой, чтобы страница успела прогрузиться
-      setTimeout(() => {
-        // @ts-ignore
-        window.ym(106793429, 'hit', url)
-      }, 300)
-    }
-  }, [pathname, searchParams])
-
   return (
     <>
-      {/* Fallback для пользователей без JavaScript */}
+      {/* Оборачиваем трекер в Suspense */}
+      <Suspense fallback={null}>
+        <MetrikaTracker />
+      </Suspense>
+      
       <noscript>
         <div>
           <img 
