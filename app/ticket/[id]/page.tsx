@@ -1,3 +1,7 @@
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
+export const revalidate = 0
+
 'use client'
 
 import { useParams } from 'next/navigation'
@@ -5,6 +9,10 @@ import { Suspense, useCallback } from 'react'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { QRCodeClient } from '@/components/QRCodeClient'
+
+export function generateStaticParams() {
+  return []
+}
 
 function TicketContent() {
   const params = useParams()
@@ -17,7 +25,6 @@ function TicketContent() {
     }
   }, [])
 
-  // Ссылка для активации в боте
   const qrData = `https://app.leadteh.ru/w/dpjIk?num=${ticketId}`
 
   return (
@@ -79,6 +86,35 @@ function TicketContent() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="p-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  const canvas = document.querySelector('canvas')
+                  if (canvas) {
+                    const link = document.createElement('a')
+                    link.download = `ticket-${ticketId}.png`
+                    link.href = canvas.toDataURL()
+                    link.click()
+                  }
+                }}
+                className="flex-1 text-center px-4 py-2 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transition-colors"
+              >
+                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Скачать билет
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="flex-1 text-center px-4 py-2 bg-white/10 rounded-lg font-semibold hover:bg-white/20 transition-colors"
+              >
+                <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Распечатать
+              </button>
             </div>
           </div>
         </div>
