@@ -1,7 +1,3 @@
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
-export const revalidate = 0
-
 'use client'
 
 import { useParams } from 'next/navigation'
@@ -9,10 +5,6 @@ import { Suspense, useCallback } from 'react'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { QRCodeClient } from '@/components/QRCodeClient'
-
-export function generateStaticParams() {
-  return []
-}
 
 function TicketContent() {
   const params = useParams()
