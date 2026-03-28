@@ -6,10 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  output: 'export',
-  trailingSlash: false,
-  // Добавляем настройку для динамических маршрутов
-  skipTrailingSlashRedirect: true,
+  output: 'export',  // Нужно для Яндекс Облака
 }
 
 export default nextConfig
