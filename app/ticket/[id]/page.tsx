@@ -8,7 +8,8 @@ import { QRCodeClient } from '@/components/QRCodeClient'
 
 function TicketContent() {
   const params = useParams()
-  const ticketId = params?.id as string
+  const slug = params?.slug as string[]
+  const ticketId = slug ? slug[0] : 'unknown'
   
   const scrollToSection = useCallback((id: string) => {
     const element = document.getElementById(id)
