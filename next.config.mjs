@@ -6,7 +6,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  output: 'export',  // Нужно для Яндекс Облака
+  output: 'export',
+  trailingSlash: false,
 }
 
 export default nextConfig
